@@ -183,16 +183,16 @@ func (c TrafficServerCollector) Collect(ch chan<- prometheus.Metric) {
 		return
 	}
 
-	body, err2 := fetchHTTP(uri, sslVerify, timeout)
-	if err2 != nil {
+	body, err := fetchHTTP(uri, sslVerify, timeout)
+	if err != nil {
 		ch <- prometheus.MustNewConstMetric(up, prometheus.GaugeValue, 0)
 		return
 	}
 
 	decoder := json.NewDecoder(body)
 	var cont Metrics
-	err3 := decoder.Decode(&cont)
-	if err3 != nil {
+	decode_err := decoder.Decode(&cont)
+	if decode_err != nil {
 		ch <- prometheus.MustNewConstMetric(up, prometheus.GaugeValue, 0)
 		return
 	}
@@ -225,11 +225,11 @@ func fetchHTTP(uri string, sslVerify bool, timeout time.Duration) (io.Reader, er
 	}
 
 	resp, err := client.Get(uri)
-    defer resp.Body.Close()
 	if err != nil {
 		return nil, err
 	}
 	if !(resp.StatusCode >= 200 && resp.StatusCode < 300) {
+		resp.Body.Close()
 		return nil, fmt.Errorf("HTTP status %d", resp.StatusCode)
 	}
 	return resp.Body, nil
@@ -237,7 +237,7 @@ func fetchHTTP(uri string, sslVerify bool, timeout time.Duration) (io.Reader, er
 
 func main() {
 	var (
-		listenAddress = kingpin.Flag("web.listen-address", "Address to listen on for web interface and telemetry.").Default(":9101").String()
+		listenAddress = kingpin.Flag("web.listen-address", "Address to listen on for web interface and telemetry.").Default(":9548").String()
 		metricsPath   = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics.").Default("/metrics").String()
 		//trafficServerScrapeURI    = kingpin.Flag("trafficserver.scrape-uri", "URI on which to scrape TrafficServer.").Default("http://localhost/stats").String()
 		//trafficServerSSLVerify    = kingpin.Flag("trafficserver.ssl-verify", "Flag that enables SSL certificate verification for the scrape URI").Default("true").Bool()
